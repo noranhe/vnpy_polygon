@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Callable, Union, Iterator
+from collections.abc import Callable, Iterator
 
 from polygon import RESTClient
 from polygon.rest.aggs import Agg, HTTPResponse
@@ -25,7 +25,7 @@ class PolygonDatafeed(BaseDatafeed):
         """"""
         self.api_key: str = SETTINGS["datafeed.password"]
 
-        self.client: RESTClient | None = None
+        self.client: RESTClient
         self.inited: bool = False
 
     def init(self, output: Callable = print) -> bool:
@@ -67,7 +67,7 @@ class PolygonDatafeed(BaseDatafeed):
             return []
 
         # polygon客户端的list_aggs方法返回一个处理分页的迭代器
-        aggs: Union[Iterator[Agg], HTTPResponse] = self.client.list_aggs(
+        aggs: Iterator[Agg] | HTTPResponse = self.client.list_aggs(
             ticker=symbol,
             multiplier=1,
             timespan=polygon_interval,
