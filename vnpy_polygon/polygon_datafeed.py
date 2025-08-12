@@ -66,6 +66,9 @@ class PolygonDatafeed(BaseDatafeed):
             output(f"Polygon.io查询K线数据失败：不支持的时间周期{interval.value}")
             return []
 
+        if len(symbol) > 10:
+            symbol = "O:" + symbol  # Polygon要求期权代码前加O:前缀
+
         # polygon客户端的list_aggs方法返回一个处理分页的迭代器
         aggs: Iterator[Agg] | HTTPResponse = self.client.list_aggs(
             ticker=symbol,
@@ -80,16 +83,15 @@ class PolygonDatafeed(BaseDatafeed):
         for agg in aggs:
             # Polygon时间戳是毫秒，转换为datetime
             dt: datetime = datetime.fromtimestamp(agg.timestamp / 1000)
-            dt = dt.replace(tzinfo=DB_TZ)
 
             # list_aggs可能返回超出请求范围的数据，所以需要过滤
             if not (start <= dt <= end):
                 continue
 
             bar = BarData(
-                symbol=symbol,
+                symbol=req.symbol,
                 exchange=exchange,
-                datetime=dt,
+                datetime=dt.replace(tzinfo=DB_TZ),
                 interval=interval,
                 volume=agg.volume,
                 open_price=agg.open,
